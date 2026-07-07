@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-Automation that onboards a platform-engineer workstation across three boundaries: the Windows host, Ubuntu-in-WSL, and VS Code Remote WSL. See [README.md](README.md) for the setup guide, per-script options, and the full list of what each script installs. This file captures the conventions an agent needs before editing the scripts — not a usage guide.
+Automation that onboards developer workstations across Windows host setup, Ubuntu-in-WSL, VS Code Remote WSL, and the emerging role-profile scaffold. See [README.md](README.md) for usage. This file captures the conventions an agent needs before editing the scripts and expansion artifacts.
 
 ## Architecture
 
@@ -10,7 +10,14 @@ Three self-contained scripts, one per platform boundary, intended to run in orde
 2. [setup-ubuntu-wsl.sh](setup-ubuntu-wsl.sh) (Bash, inside WSL) → [setup-ubuntu-wsl.yaml](setup-ubuntu-wsl.yaml) — cloud CLIs, Terraform/tfenv, language SDKs, zsh + Powerlevel10k, git profile scaffolding, and (optionally) VS Code setup.
 3. [setup-vscode-wsl.sh](setup-vscode-wsl.sh) (Bash, inside WSL) → [setup-vscode-wsl.yaml](setup-vscode-wsl.yaml) — VS Code Machine `settings.json` plus the extension list.
 
-Keep new automation at the repo root; there is no src/test/asset tree. Every script follows the same five-stage flow — **defaults → parse CLI args → load YAML overrides → dry-run plan (exit early) → guarded execution**. Match this structure exactly when editing.
+Expansion scaffolding now lives outside the root scripts:
+
+- `profiles/` contains flat role profiles for future role-based execution.
+- `compose/` contains starter Docker Compose templates for local service dependencies.
+- `Makefile` contains validation targets.
+- `archive/` contains historical review material.
+
+Every script follows the same five-stage flow — **defaults → parse CLI args → load YAML overrides → dry-run plan (exit early) → guarded execution**. Match this structure exactly when editing.
 
 ## Adding or changing a feature flag
 
@@ -30,6 +37,8 @@ PowerShell mirrors this: a `param()` switch, a `Get-YamlBool` load line guarded 
 - **Bash**: `set -euo pipefail`, two-space indent, lowercase `snake_case` functions, uppercase `ENABLE_*` flags. Booleans are stored as integers `1`/`0`, not `true`/`false`. Prefix every privileged command with `${SUDO}` (empty when running as root) — never bare `sudo`. Use `log "…"` for section headers.
 - **PowerShell**: four-space indent, approved-verb PascalCase functions (`Ensure-Command`, `Get-YamlBool`), PascalCase params, `Write-Step` for section headers.
 - **YAML**: lowercase `snake_case` keys mirroring the script flags. The parsers (`yaml_get_value` / `Get-YamlValue`) are hand-rolled and read **flat `key: value` scalars only** — no nested maps, no lists (one pair of surrounding quotes is stripped). Do not introduce nested YAML. Boolean flags load through `yaml_get_bool`; string/version flags load through `yaml_get_value`.
+- **Profiles**: keep profile YAML flat too (`platform_*`, `feature_*`, `version_*`, `notes`). Profiles are not wired into the setup scripts yet; treat them as the role matrix and implementation contract for the expansion work.
+- **Compose**: use Compose files without a top-level `version:` key, pin images where practical, include health checks for long-running dependencies, and keep secrets in `.env.local` rather than committed files.
 - **Idempotency is required.** Every install step guards on "already present" (`command -v`, `[[ -d … ]]`, `append_if_missing`, managed-block markers like `### onboarding shell env ###` and `Managed by setup-windows-wsl.ps1`). New steps must be safe to re-run.
 
 ## Gotchas
@@ -41,7 +50,13 @@ PowerShell mirrors this: a `param()` switch, a `Get-YamlBool` load line guarded 
 
 ## Validate
 
-No build step or test suite. After any change, run the relevant dry-run and confirm the plan matches the flags (agents should run these automatically):
+After any change, run the combined validation target when possible:
+
+```bash
+make validate
+```
+
+At minimum, run the relevant dry-run and confirm the plan matches the flags:
 
 ```bash
 ./setup-ubuntu-wsl.sh --dry-run
@@ -52,7 +67,7 @@ No build step or test suite. After any change, run the relevant dry-run and conf
 .\setup-windows-wsl.ps1 -DryRun
 ```
 
-For shell edits, also run `shellcheck setup-ubuntu-wsl.sh setup-vscode-wsl.sh` when available.
+For shell edits, also run `shellcheck -S warning setup-ubuntu-wsl.sh setup-vscode-wsl.sh` when available.
 
 ## Commit & Pull Requests
 

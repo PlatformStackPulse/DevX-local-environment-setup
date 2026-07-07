@@ -1,0 +1,32 @@
+# Android native developer profile.
+name: android-native
+description: Native Android development with Android Studio, SDKs, and emulators
+status: scaffold
+extends: base
+
+platform_windows: true
+platform_ubuntu_wsl: partial
+platform_linux: true
+platform_macos: true
+
+feature_core: true
+feature_git: true
+feature_github_cli: true
+feature_ssh: true
+feature_vscode: true
+feature_shell_tools: true
+feature_java: true
+feature_android: true
+feature_android_studio: true
+feature_android_sdk: true
+feature_android_platform_tools: true
+feature_android_emulator: host_only
+feature_gradle: true
+feature_flutter: false
+feature_ios: false
+
+version_jdk: "17"
+version_android_platform: latest
+version_android_build_tools: latest
+
+notes: WSL can support source and CLI workflows, but emulator creation and acceleration should be host-oriented.

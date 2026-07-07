@@ -1,0 +1,30 @@
+# iOS native developer profile.
+name: ios-native
+description: Native iOS development with Xcode, simulators, CocoaPods, and fastlane
+status: scaffold
+extends: base
+
+platform_windows: false
+platform_ubuntu_wsl: false
+platform_linux: false
+platform_macos: true
+
+feature_core: true
+feature_git: true
+feature_github_cli: true
+feature_ssh: true
+feature_vscode: true
+feature_shell_tools: true
+feature_xcode: true
+feature_xcode_command_line_tools: true
+feature_ios: true
+feature_ios_simulator: true
+feature_cocoapods: true
+feature_fastlane: true
+feature_flutter: false
+feature_android: false
+
+version_xcode: installed
+version_ruby: system_or_brew
+
+notes: iOS simulators require macOS and Xcode; Windows, Linux, and WSL are unsupported for simulator execution.

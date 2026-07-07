@@ -1,0 +1,37 @@
+# Full stack web developer profile.
+name: fullstack-web
+description: Web frontend plus local API and service development
+status: scaffold
+extends: base
+
+platform_windows: true
+platform_ubuntu_wsl: true
+platform_linux: true
+platform_macos: true
+
+feature_core: true
+feature_git: true
+feature_github_cli: true
+feature_ssh: true
+feature_vscode: true
+feature_shell_tools: true
+feature_docker: true
+feature_node: true
+feature_python: true
+feature_playwright: true
+feature_postgres: true
+feature_redis: true
+feature_localstack: true
+feature_api_clients: true
+feature_terraform: false
+feature_flutter: false
+feature_android: false
+feature_ios: false
+
+version_node: lts
+version_python: "3.12"
+version_postgres: "16"
+version_redis: "7"
+version_localstack: "3.8"
+
+notes: Designed for React/Vue/Astro/TypeScript apps with local Docker Compose services.

@@ -1,6 +1,6 @@
 # Local Development Environment Setup
 
-Automation scripts for preparing a Developers, DevOps and platform engineer workstation across Windows, WSL Ubuntu, and VS Code Remote WSL.
+Automation scripts for preparing developer, DevOps, mobile, and platform engineering workstations across Windows, WSL Ubuntu, and VS Code Remote WSL.
 
 The repository is intentionally small: each setup script lives beside a YAML file that controls which features are enabled. Use dry-run mode first to preview actions before changing the local machine.
 
@@ -14,6 +14,11 @@ The repository is intentionally small: each setup script lives beside a YAML fil
 | `setup-ubuntu-wsl.yaml` | Feature flags for the Ubuntu/WSL script. |
 | `setup-vscode-wsl.sh` | Configures VS Code settings and extensions from inside WSL. |
 | `setup-vscode-wsl.yaml` | Feature flags for the VS Code-only script. |
+| `profiles/` | Scaffolded role profiles for full stack, backend, DevOps, Flutter, Android, and iOS developers. |
+| `compose/` | Local service templates for backend/full-stack workflows. |
+| `Makefile` | Local validation targets for scripts, profiles, and Compose templates. |
+| `EXPANSION_PLAN.md` | Roadmap for turning this repo into a multi-role setup platform. |
+| `archive/REVIEW_REPORT.md` | Previous in-depth review and issue analysis. |
 | `AGENTS.md` | Contributor guidance for future repository changes. |
 
 ## Quick Start
@@ -86,6 +91,36 @@ The Ubuntu script also accepts tool-version pins (`go_version`, `node_channel`, 
 
 YAML files are for non-secret configuration only. Do not store tokens, passwords, personal access keys, or machine-specific credentials in this repository.
 
+## Role Profile Scaffold
+
+The `profiles/` directory starts the expansion toward role-based setup. These profiles are currently design/configuration scaffolds; the existing setup scripts do not consume `--profile` yet.
+
+Available profiles:
+
+| Profile | Intended audience |
+| --- | --- |
+| `profiles/base.yaml` | Shared baseline for all roles. |
+| `profiles/fullstack-web.yaml` | Frontend plus local API/service development. |
+| `profiles/backend.yaml` | API, worker, and service developers. |
+| `profiles/devops.yaml` | Cloud, Terraform, Kubernetes, and security tooling. |
+| `profiles/flutter-mobile.yaml` | Flutter mobile/web developers. |
+| `profiles/android-native.yaml` | Native Android developers with host emulators. |
+| `profiles/ios-native.yaml` | Native iOS developers on macOS. |
+
+The profile schema is intentionally flat (`key: value`) to match the repository's lightweight YAML parsing. Nested maps and lists should wait until a real parser is introduced.
+
+## Local Service Templates
+
+The `compose/` directory includes starter Docker Compose files for local development dependencies:
+
+```bash
+docker compose -f compose/docker-compose.backend.yaml up -d
+docker compose -f compose/docker-compose.fullstack.yaml up -d
+docker compose -f compose/docker-compose.localstack.yaml up -d
+```
+
+These templates provide pinned service images, health checks, and LocalStack baseline resources. They are meant as reusable starting points for role profiles and project-specific local environments.
+
 ## What Gets Installed or Configured
 
 The Windows script can enable WSL and VirtualMachinePlatform, update WSL, install Ubuntu, write managed `.wslconfig` networking defaults, install Meslo Nerd Fonts, and optionally install Git, VS Code, Docker Desktop, Windows Terminal, Android Studio, Flutter, VPNKit, and troubleshooting/cloud tools.
@@ -108,6 +143,12 @@ There is no build step or automated test suite. Validate changes with the releva
 ```
 
 For shell edits, run `shellcheck setup-ubuntu-wsl.sh setup-vscode-wsl.sh` when ShellCheck is available.
+
+Or run the combined local validation target:
+
+```bash
+make validate
+```
 
 ## Notes
 
