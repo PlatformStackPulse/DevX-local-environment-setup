@@ -1,8 +1,10 @@
 # Local Development Environment Setup
 
-Automation scripts for preparing developer, DevOps, mobile, and platform engineering workstations across Windows, WSL Ubuntu, and VS Code Remote WSL.
+Automation scripts for preparing developer, DevOps, mobile, and platform engineering workstations across macOS, Windows, WSL Ubuntu, and VS Code Remote WSL.
 
 The repository is intentionally small: each setup script lives beside a YAML file that controls which features are enabled. Use dry-run mode first to preview actions before changing the local machine.
+
+Every tool the scripts install is traceable to a real project under `~/github` — see [TOOLS.md](TOOLS.md) for the tool-by-tool provenance (which project, and the evidence).
 
 ## Getting Started
 
@@ -17,6 +19,7 @@ Recommended order for a brand-new workstation: **Windows host → Ubuntu in WSL 
 
 **Prerequisites**
 
+- macOS script: macOS on Apple Silicon or Intel; Homebrew is installed automatically if missing. Do not run as root.
 - Windows host script: Windows 10/11 with an elevated (Run as Administrator) PowerShell session.
 - Ubuntu script: an Ubuntu distro running in WSL2 (installed by the Windows script or manually).
 - VS Code script: the `code` CLI available inside WSL (open the distro once via VS Code Remote WSL).
@@ -25,12 +28,16 @@ Recommended order for a brand-new workstation: **Windows host → Ubuntu in WSL 
 
 | File | Purpose |
 | --- | --- |
+| `setup-macos.sh` | Installs the macOS developer toolchain via Homebrew: core CLIs, cloud CLIs, Terraform + quality tools, Go + quality tools, Node, Python, Kubernetes tools, Docker, and optional Flutter/iOS/Android/LocalStack tooling. |
+| `setup-macos.yaml` | Feature flags for the macOS script. |
 | `setup-windows-wsl.ps1` | Enables WSL2, installs/configures the target Ubuntu distro, applies `.wslconfig`, installs fonts, and optionally installs Windows tooling. |
 | `setup-windows-wsl.yaml` | Feature flags for the Windows host script. |
-| `setup-ubuntu-wsl.sh` | Installs Ubuntu/WSL developer tooling, cloud CLIs, language SDKs, Terraform, shell configuration, Git profiles, and optional VS Code WSL setup. |
+| `setup-ubuntu-wsl.sh` | Installs Ubuntu/WSL developer tooling, cloud CLIs, language SDKs, Terraform, GitHub CLI, Docker, Terraform/Go quality tools, Kubernetes tools, Python, shell configuration, Git profiles, and optional VS Code WSL setup. |
 | `setup-ubuntu-wsl.yaml` | Feature flags for the Ubuntu/WSL script. |
 | `setup-vscode-wsl.sh` | Configures VS Code settings and extensions from inside WSL. |
 | `setup-vscode-wsl.yaml` | Feature flags for the VS Code-only script. |
+| `vscode-extensions.txt` | Shared VS Code extension list read by all three shell scripts (single source of truth). |
+| `TOOLS.md` | Evidence-based tool inventory: each tool mapped to the real project that requires it. |
 | `profiles/` | Scaffolded role profiles for full stack, backend, DevOps, Flutter, Android, and iOS developers. |
 | `compose/` | Local service templates for backend/full-stack workflows. |
 | `Makefile` | Local validation targets for scripts, profiles, and Compose templates. |
@@ -38,6 +45,24 @@ Recommended order for a brand-new workstation: **Windows host → Ubuntu in WSL 
 | `AGENTS.md` | Contributor guidance for future repository changes. |
 
 ## Quick Start
+
+### macOS
+
+Run from the repository folder on a Mac (Apple Silicon or Intel). Homebrew is installed automatically if missing:
+
+```bash
+./setup-macos.sh --dry-run
+./setup-macos.sh
+```
+
+Useful options:
+
+```bash
+./setup-macos.sh --config ./setup-macos.yaml
+./setup-macos.sh --skip-vscode
+```
+
+Heavy or role-specific toolchains (`.NET`, Flutter, iOS, Android, LocalStack, media) default to off in `setup-macos.yaml`; enable the ones your role needs. Everything else (core CLIs, cloud CLIs, Terraform + quality tools, Go + quality tools, Node, Python, Kubernetes tools, Docker via Colima) installs by default.
 
 ### 1. Windows Host
 
@@ -139,11 +164,47 @@ These templates provide pinned service images, health checks, and LocalStack bas
 
 ## What Gets Installed or Configured
 
-The Windows script can enable WSL and VirtualMachinePlatform, update WSL, install Ubuntu, write managed `.wslconfig` networking defaults, install Meslo Nerd Fonts, and optionally install Git, VS Code, Docker Desktop, Windows Terminal, Android Studio, Flutter, VPNKit, and troubleshooting/cloud tools.
+The macOS script (Homebrew) can install core CLIs (git, gh, jq, yq, ripgrep, fd, git-cliff, a modern bash), shell quality tools (shellcheck, shfmt, bats), cloud CLIs (AWS, Azure, Google Cloud, eksctl), Terraform via tfenv, Terraform quality tools (tflint, terraform-docs, trivy, pre-commit, gitlint), Go and Go quality tools (golangci-lint, govulncheck, gosec, staticcheck, air), Node via nvm, Python + pipx, Kubernetes tools (kubectl, helm, k9s), a Docker runtime (Colima or Docker Desktop), and optionally .NET, Flutter + CocoaPods, iOS tooling (Xcode CLT, fastlane, Ruby), Android command-line tooling, LocalStack tooling, and ffmpeg. It also installs Nerd Fonts, Oh My Zsh + Powerlevel10k + plugins, Git profile scaffolding, and VS Code settings/extensions.
 
-The Ubuntu script can install base packages, AWS CLI, Azure CLI, Google Cloud CLI, Terraform, tfenv, .NET, Go, Node.js through nvm, Oh My Zsh, Powerlevel10k, zsh plugins, shell profile blocks, Git profile scaffolding, and VS Code WSL configuration.
+The Windows script can enable WSL and VirtualMachinePlatform, update WSL, install Ubuntu, write managed `.wslconfig` networking defaults, install Meslo Nerd Fonts, and optionally install Git, GitHub CLI, VS Code, Docker Desktop, Windows Terminal, Terraform, kubectl, Helm, Android Studio, Flutter, VPNKit, and troubleshooting/cloud tools.
 
-The VS Code script can apply editor/terminal/Terraform defaults, the Catppuccin Mocha theme, and the configured WSL extension list.
+The Ubuntu script can install base packages, AWS CLI, Azure CLI, Google Cloud CLI, Terraform + tfenv, GitHub CLI, .NET, Go, Node.js through nvm, Python 3 + pipx, Docker Engine + Compose + Buildx, Terraform quality tools (tflint, terraform-docs, trivy, pre-commit, gitlint), Go quality tools (golangci-lint, govulncheck, gosec, staticcheck, air), Kubernetes tools (kubectl, helm, k9s), shell quality tools (shellcheck, shfmt, bats, yq), and optionally Java (OpenJDK 17), the Flutter SDK, and LocalStack tooling — plus Oh My Zsh, Powerlevel10k, zsh plugins, shell profile blocks, Git profile scaffolding, and VS Code WSL configuration.
+
+The VS Code script can apply editor/terminal/Terraform defaults, the Catppuccin Mocha theme, and the shared extension list from `vscode-extensions.txt`.
+
+### Supported Roles and Platforms
+
+| Role | macOS | Ubuntu/WSL | Windows host |
+| --- | --- | --- | --- |
+| Full stack web | yes | yes | partial |
+| Back end | yes | yes | partial |
+| DevOps | yes | yes | partial |
+| Flutter mobile | yes | partial (web/Linux; emulators host-only) | yes |
+| Android native | yes | partial | yes |
+| iOS native | yes | no | no |
+
+"partial" means the platform participates but some tooling must run elsewhere; iOS is macOS-only, and Android emulators are host-oriented. See [TOOLS.md](TOOLS.md) for the full tool-to-project mapping and per-platform install method.
+
+### Flutter mobile apps
+
+The Flutter apps (xpeeddating, smart-survey, Chapar-Tech mobile-app) build against a specific toolchain — the setup scripts install exactly what their Makefiles assume: Flutter at `~/flutter/bin` (their `FLUTTER` default), the Android SDK (platform-tools, `platforms;android-35`, `build-tools;35.0.0`, `ndk;27.0.12077973`), an emulator + AVD, JDK 17, and — on macOS — the iOS chain with **CocoaPods 1.16.2 as a Homebrew-Ruby gem** (the system `pod 1.15.2` is rejected).
+
+Enable the mobile toolchain (all off by default because of download size):
+
+```bash
+# macOS — full mobile toolchain (Android + iOS)
+./setup-macos.sh --config <(sed 's/^install_flutter:.*/install_flutter: true/; s/^install_android_tooling:.*/install_android_tooling: true/; s/^install_ios_tooling:.*/install_ios_tooling: true/' setup-macos.yaml) --dry-run
+# or just edit setup-macos.yaml: install_flutter / install_android_tooling / install_ios_tooling → true
+```
+
+```yaml
+# setup-ubuntu-wsl.yaml — Flutter web/Linux builds + APK builds (emulators run on the Windows host)
+install_flutter: true
+install_android_sdk: true
+install_java: true
+```
+
+The apps then run locally via their own Makefile: `docker compose up -d` (LocalStack) → `go run ./cmd/local-api` (:8090) → `flutter run -d chrome` (web), `-d "iPhone 14 Pro"` (iOS Simulator), or `-d emulator-5554` (Android). iOS Simulator builds also need the full Xcode from the App Store; the script installs only the Command Line Tools. Android emulators need host GPU acceleration, so run them on Windows/macOS rather than inside WSL.
 
 ## Validation
 
@@ -152,13 +213,14 @@ There is no build step or automated test suite. Validate changes with the releva
 ```bash
 ./setup-ubuntu-wsl.sh --dry-run
 ./setup-vscode-wsl.sh --dry-run
+./setup-macos.sh --dry-run
 ```
 
 ```powershell
 .\setup-windows-wsl.ps1 -DryRun
 ```
 
-For shell edits, run `shellcheck setup-ubuntu-wsl.sh setup-vscode-wsl.sh` when ShellCheck is available.
+For shell edits, run `shellcheck setup-ubuntu-wsl.sh setup-vscode-wsl.sh setup-macos.sh` when ShellCheck is available.
 
 Or run the combined local validation target:
 
@@ -170,5 +232,6 @@ make validate
 
 - Some enterprise access tasks, such as Jira, Bitbucket, Artifactory, cloud role grants, and service-specific permissions, remain manual.
 - If the `code` CLI is unavailable in WSL, open the distro through VS Code Remote WSL and rerun the VS Code setup.
-- Android emulator setup is intentionally Windows-host oriented.
+- On macOS, the default Docker runtime is Colima (start it with `colima start`); set `docker_runtime: desktop` in `setup-macos.yaml` to use Docker Desktop instead. iOS tooling (Xcode, CocoaPods, fastlane) is macOS-only.
+- Android emulator setup is intentionally host-oriented (Windows or macOS), not WSL.
 - Review YAML flags before running without `--dry-run`; these scripts can modify system packages, user profiles, WSL config, PATH entries, and installed applications.

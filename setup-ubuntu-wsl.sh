@@ -18,6 +18,17 @@ ENABLE_TFENV=1
 ENABLE_DOTNET=1
 ENABLE_GO=1
 ENABLE_NODE=1
+ENABLE_GITHUB_CLI=1
+ENABLE_PYTHON=1
+ENABLE_SHELL_QUALITY=1
+ENABLE_DOCKER=1
+ENABLE_TERRAFORM_QUALITY=1
+ENABLE_GO_QUALITY=1
+ENABLE_KUBERNETES=1
+ENABLE_JAVA=0
+ENABLE_FLUTTER=0
+ENABLE_ANDROID_SDK=0
+ENABLE_LOCALSTACK_TOOLING=0
 ENABLE_OH_MY_ZSH=1
 ENABLE_POWERLEVEL10K=1
 ENABLE_ZSH_PLUGINS=1
@@ -31,6 +42,17 @@ NODE_CHANNEL="lts"
 DOTNET_SDK_VERSION="8.0"
 NVM_VERSION="v0.40.3"
 TERRAFORM_VERSION="latest"
+TERRAFORM_DOCS_VERSION="v0.19.0"
+K9S_VERSION="latest"
+SHFMT_VERSION="v3.10.0"
+YQ_VERSION="latest"
+FLUTTER_CHANNEL="stable"
+JDK_VERSION="17"
+# Android SDK pins (from the real mobile apps' build.gradle: compileSdk 35, ndk 27.0.12077973).
+ANDROID_API_LEVEL="35"
+ANDROID_BUILD_TOOLS="35.0.0"
+ANDROID_NDK_VERSION="27.0.12077973"
+ANDROID_CMDLINE_TOOLS_VERSION="11076708"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -142,6 +164,17 @@ print_dry_run_plan() {
   echo "- .NET SDK install: $(print_bool "$ENABLE_DOTNET")"
   echo "- Go install: $(print_bool "$ENABLE_GO")"
   echo "- Node.js via nvm install: $(print_bool "$ENABLE_NODE")"
+  echo "- GitHub CLI (gh) install: $(print_bool "$ENABLE_GITHUB_CLI")"
+  echo "- Python 3 + pipx install: $(print_bool "$ENABLE_PYTHON")"
+  echo "- shell quality (shellcheck, shfmt, bats, yq) install: $(print_bool "$ENABLE_SHELL_QUALITY")"
+  echo "- Docker Engine + Compose + Buildx install: $(print_bool "$ENABLE_DOCKER")"
+  echo "- Terraform quality (tflint, terraform-docs, trivy, pre-commit, gitlint) install: $(print_bool "$ENABLE_TERRAFORM_QUALITY")"
+  echo "- Go quality (golangci-lint, govulncheck, gosec, staticcheck, air) install: $(print_bool "$ENABLE_GO_QUALITY")"
+  echo "- Kubernetes tools (kubectl, helm, k9s) install: $(print_bool "$ENABLE_KUBERNETES")"
+  echo "- Java (OpenJDK ${JDK_VERSION}) install: $(print_bool "$ENABLE_JAVA")"
+  echo "- Flutter SDK (${FLUTTER_CHANNEL}, ~/flutter) install: $(print_bool "$ENABLE_FLUTTER")"
+  echo "- Android SDK (platform-tools, platforms;android-${ANDROID_API_LEVEL}, build-tools, ndk) install: $(print_bool "$ENABLE_ANDROID_SDK")"
+  echo "- LocalStack tooling (localstack, awslocal) install: $(print_bool "$ENABLE_LOCALSTACK_TOOLING")"
   echo "- Oh My Zsh install: $(print_bool "$ENABLE_OH_MY_ZSH")"
   echo "- Powerlevel10k install: $(print_bool "$ENABLE_POWERLEVEL10K")"
   echo "- zsh plugins install: $(print_bool "$ENABLE_ZSH_PLUGINS")"
@@ -155,6 +188,13 @@ print_dry_run_plan() {
   echo "- .NET SDK: ${DOTNET_SDK_VERSION}"
   echo "- nvm: ${NVM_VERSION}"
   echo "- Terraform (tfenv): ${TERRAFORM_VERSION}"
+  echo "- terraform-docs: ${TERRAFORM_DOCS_VERSION}"
+  echo "- k9s: ${K9S_VERSION}"
+  echo "- shfmt: ${SHFMT_VERSION}"
+  echo "- yq: ${YQ_VERSION}"
+  echo "- Flutter channel: ${FLUTTER_CHANNEL}"
+  echo "- OpenJDK: ${JDK_VERSION}"
+  echo "- Android API level: ${ANDROID_API_LEVEL} (build-tools ${ANDROID_BUILD_TOOLS}, ndk ${ANDROID_NDK_VERSION})"
 }
 
 append_if_missing() {
@@ -426,6 +466,308 @@ install_nvm_node() {
   fi
 }
 
+LOCAL_BIN="${HOME}/.local/bin"
+
+go_arch() {
+  case "$(uname -m)" in
+    x86_64) printf 'amd64\n' ;;
+    aarch64 | arm64) printf 'arm64\n' ;;
+    *) printf 'unsupported\n' ;;
+  esac
+}
+
+# Download a raw binary to LOCAL_BIN (best effort; never aborts the run).
+install_raw_bin() {
+  local url="$1"
+  local name="$2"
+  mkdir -p "${LOCAL_BIN}"
+  if curl -fsSL "$url" -o "${LOCAL_BIN}/${name}"; then
+    chmod +x "${LOCAL_BIN}/${name}"
+    echo "Installed ${name} to ${LOCAL_BIN}"
+  else
+    echo "Download failed for ${name}: ${url}" >&2
+  fi
+}
+
+# Extract a single binary from a .tar.gz release into LOCAL_BIN (best effort).
+install_targz_bin() {
+  local url="$1"
+  local name="$2"
+  local tmp
+  tmp="$(mktemp -d)"
+  if curl -fsSL "$url" -o "${tmp}/archive.tgz" && tar -C "${tmp}" -xzf "${tmp}/archive.tgz"; then
+    local found
+    found="$(find "${tmp}" -type f -name "${name}" | head -n1)"
+    mkdir -p "${LOCAL_BIN}"
+    if [[ -n "$found" ]]; then
+      install -m 0755 "$found" "${LOCAL_BIN}/${name}"
+      echo "Installed ${name} to ${LOCAL_BIN}"
+    else
+      echo "Binary '${name}' not found inside ${url}" >&2
+    fi
+  else
+    echo "Download/extract failed for ${name}: ${url}" >&2
+  fi
+  rm -rf "${tmp}"
+}
+
+# Extract a single binary from a .zip release into LOCAL_BIN (best effort).
+install_zip_bin() {
+  local url="$1"
+  local name="$2"
+  local tmp
+  tmp="$(mktemp -d)"
+  if curl -fsSL "$url" -o "${tmp}/archive.zip" && unzip -qo "${tmp}/archive.zip" -d "${tmp}"; then
+    local found
+    found="$(find "${tmp}" -type f -name "${name}" | head -n1)"
+    mkdir -p "${LOCAL_BIN}"
+    if [[ -n "$found" ]]; then
+      install -m 0755 "$found" "${LOCAL_BIN}/${name}"
+      echo "Installed ${name} to ${LOCAL_BIN}"
+    else
+      echo "Binary '${name}' not found inside ${url}" >&2
+    fi
+  else
+    echo "Download/unzip failed for ${name}: ${url}" >&2
+  fi
+  rm -rf "${tmp}"
+}
+
+# Idempotent `go install` into ${HOME}/go/bin.
+go_install() {
+  local pkg="$1"
+  local bin="$2"
+  if command -v "$bin" >/dev/null 2>&1; then
+    echo "Already installed (go): $bin"
+    return
+  fi
+  if command -v go >/dev/null 2>&1; then
+    GOBIN="${HOME}/go/bin" go install "$pkg" || echo "go install failed for ${pkg}" >&2
+  else
+    echo "Skipping 'go install ${pkg}': go is not on PATH (enable install_go)." >&2
+  fi
+}
+
+# Idempotent pipx install.
+pipx_install() {
+  local pkg="$1"
+  local bin="$2"
+  if command -v "$bin" >/dev/null 2>&1; then
+    echo "Already installed (pipx): $bin"
+    return
+  fi
+  if command -v pipx >/dev/null 2>&1; then
+    pipx install "$pkg" || echo "pipx install failed for ${pkg}" >&2
+  else
+    echo "Skipping pipx install of ${pkg}: pipx unavailable (enable install_python)." >&2
+  fi
+}
+
+install_github_cli() {
+  if command -v gh >/dev/null 2>&1; then
+    echo "gh already installed: $(gh --version | head -n1)"
+    return
+  fi
+  ${SUDO} mkdir -p /etc/apt/keyrings
+  curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | ${SUDO} gpg --dearmor -o /etc/apt/keyrings/githubcli-archive-keyring.gpg
+  ${SUDO} chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | ${SUDO} tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+  ${SUDO} apt-get update -y
+  ${SUDO} DEBIAN_FRONTEND=noninteractive apt-get install -y gh
+  gh --version | head -n1
+}
+
+install_python_tooling() {
+  ${SUDO} DEBIAN_FRONTEND=noninteractive apt-get install -y python3 python3-pip python3-venv
+  if ! command -v pipx >/dev/null 2>&1; then
+    ${SUDO} DEBIAN_FRONTEND=noninteractive apt-get install -y pipx ||
+      python3 -m pip install --user --break-system-packages pipx ||
+      python3 -m pip install --user pipx || true
+  fi
+  if command -v pipx >/dev/null 2>&1; then
+    pipx ensurepath || true
+  fi
+  python3 --version
+}
+
+install_shell_quality() {
+  local arch
+  arch="$(go_arch)"
+  ${SUDO} DEBIAN_FRONTEND=noninteractive apt-get install -y shellcheck bats
+  if ! command -v shfmt >/dev/null 2>&1; then
+    install_raw_bin "https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}/shfmt_${SHFMT_VERSION}_linux_${arch}" shfmt
+  fi
+  if ! command -v yq >/dev/null 2>&1; then
+    local yq_url
+    if [[ "${YQ_VERSION}" == "latest" ]]; then
+      yq_url="https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${arch}"
+    else
+      yq_url="https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${arch}"
+    fi
+    install_raw_bin "$yq_url" yq
+  fi
+}
+
+install_docker_engine() {
+  if command -v docker >/dev/null 2>&1; then
+    echo "docker already installed: $(docker --version)"
+  else
+    ${SUDO} install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | ${SUDO} gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    ${SUDO} chmod a+r /etc/apt/keyrings/docker.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | ${SUDO} tee /etc/apt/sources.list.d/docker.list >/dev/null
+    ${SUDO} apt-get update -y
+    ${SUDO} DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  fi
+  if getent group docker >/dev/null 2>&1; then
+    ${SUDO} usermod -aG docker "$USER" || true
+    echo "Added ${USER} to the docker group (log out/in for it to take effect)."
+  fi
+  echo "On WSL without Docker Desktop, start the daemon with: sudo service docker start"
+  docker --version || true
+}
+
+install_terraform_quality() {
+  local arch
+  arch="$(go_arch)"
+  if ! command -v tflint >/dev/null 2>&1; then
+    install_zip_bin "https://github.com/terraform-linters/tflint/releases/latest/download/tflint_linux_${arch}.zip" tflint
+  fi
+  if ! command -v terraform-docs >/dev/null 2>&1; then
+    install_targz_bin "https://terraform-docs.io/dl/${TERRAFORM_DOCS_VERSION}/terraform-docs-${TERRAFORM_DOCS_VERSION}-linux-${arch}.tar.gz" terraform-docs
+  fi
+  if ! command -v trivy >/dev/null 2>&1; then
+    mkdir -p "${LOCAL_BIN}"
+    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b "${LOCAL_BIN}" || echo "trivy install failed" >&2
+  fi
+  pipx_install pre-commit pre-commit
+  pipx_install gitlint gitlint
+}
+
+install_go_quality() {
+  export PATH="/usr/local/go/bin:${HOME}/go/bin:${PATH}"
+  if ! command -v golangci-lint >/dev/null 2>&1; then
+    mkdir -p "${LOCAL_BIN}"
+    curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b "${LOCAL_BIN}" || echo "golangci-lint install failed" >&2
+  fi
+  go_install "golang.org/x/vuln/cmd/govulncheck@latest" govulncheck
+  go_install "github.com/securego/gosec/v2/cmd/gosec@latest" gosec
+  go_install "honnef.co/go/tools/cmd/staticcheck@latest" staticcheck
+  go_install "github.com/air-verse/air@latest" air
+  go_install "github.com/git-chglog/git-chglog/cmd/git-chglog@latest" git-chglog
+}
+
+install_kubernetes_tools() {
+  local arch
+  arch="$(go_arch)"
+  if ! command -v kubectl >/dev/null 2>&1; then
+    ${SUDO} mkdir -p /etc/apt/keyrings
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | ${SUDO} gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    ${SUDO} chmod go+r /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /" | ${SUDO} tee /etc/apt/sources.list.d/kubernetes.list >/dev/null
+    ${SUDO} apt-get update -y
+    ${SUDO} DEBIAN_FRONTEND=noninteractive apt-get install -y kubectl
+  fi
+  if ! command -v helm >/dev/null 2>&1; then
+    curl -fsSL https://baltocdn.com/helm/signing.asc | ${SUDO} gpg --dearmor -o /usr/share/keyrings/helm.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | ${SUDO} tee /etc/apt/sources.list.d/helm-stable-debian.list >/dev/null
+    ${SUDO} apt-get update -y
+    ${SUDO} DEBIAN_FRONTEND=noninteractive apt-get install -y helm
+  fi
+  if ! command -v k9s >/dev/null 2>&1; then
+    local url
+    if [[ "${K9S_VERSION}" == "latest" ]]; then
+      url="https://github.com/derailed/k9s/releases/latest/download/k9s_Linux_${arch}.tar.gz"
+    else
+      url="https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_${arch}.tar.gz"
+    fi
+    install_targz_bin "$url" k9s
+  fi
+}
+
+install_java() {
+  ${SUDO} DEBIAN_FRONTEND=noninteractive apt-get install -y "openjdk-${JDK_VERSION}-jdk"
+  java -version 2>&1 | head -n1 || true
+}
+
+install_flutter_sdk() {
+  local flutter_dir="${HOME}/flutter"
+  # Linux desktop toolchain deps (clang/cmake/ninja/gtk are in base packages); add mesa GLU.
+  ${SUDO} DEBIAN_FRONTEND=noninteractive apt-get install -y libglu1-mesa || true
+  if [[ ! -d "${flutter_dir}" ]]; then
+    git clone --depth 1 -b "${FLUTTER_CHANNEL}" https://github.com/flutter/flutter.git "${flutter_dir}"
+  else
+    echo "Flutter already present at ${flutter_dir}"
+  fi
+  export PATH="${flutter_dir}/bin:${PATH}"
+  if command -v flutter >/dev/null 2>&1; then
+    flutter config --no-analytics >/dev/null 2>&1 || true
+    flutter config --enable-web >/dev/null 2>&1 || true
+    flutter precache || true
+    flutter --version || true
+    echo "Flutter at ${flutter_dir}/bin (matches the apps' FLUTTER default)."
+    echo "Enable Android builds with install_android_sdk. Android emulators belong on the host OS;"
+    echo "in WSL you can build APKs and run 'flutter run -d chrome' (web)."
+  fi
+}
+
+install_android_sdk() {
+  # Ensure a JDK for sdkmanager (the apps target JDK 17).
+  if ! command -v java >/dev/null 2>&1; then
+    ${SUDO} DEBIAN_FRONTEND=noninteractive apt-get install -y "openjdk-${JDK_VERSION}-jdk"
+  fi
+
+  local android_home="${HOME}/Android/Sdk"
+  local clt_dir="${android_home}/cmdline-tools/latest"
+  export ANDROID_HOME="${android_home}"
+  export ANDROID_SDK_ROOT="${android_home}"
+
+  if [[ ! -x "${clt_dir}/bin/sdkmanager" ]]; then
+    mkdir -p "${android_home}/cmdline-tools"
+    local tmp
+    tmp="$(mktemp -d)"
+    if curl -fsSL "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS_VERSION}_latest.zip" -o "${tmp}/clt.zip" && unzip -qo "${tmp}/clt.zip" -d "${tmp}"; then
+      rm -rf "${clt_dir}"
+      mkdir -p "${clt_dir}"
+      # The archive extracts a top-level 'cmdline-tools' dir; its contents go under latest/.
+      if [[ -d "${tmp}/cmdline-tools" ]]; then
+        mv "${tmp}/cmdline-tools/"* "${clt_dir}/"
+      fi
+    else
+      echo "Android cmdline-tools download failed." >&2
+    fi
+    rm -rf "${tmp}"
+  fi
+
+  local sdkmanager="${clt_dir}/bin/sdkmanager"
+  if [[ ! -x "${sdkmanager}" ]]; then
+    echo "sdkmanager not available; skipping Android component install." >&2
+    return 0
+  fi
+
+  local img_arch
+  case "$(uname -m)" in
+    aarch64 | arm64) img_arch="arm64-v8a" ;;
+    *) img_arch="x86_64" ;;
+  esac
+
+  yes | "${sdkmanager}" --sdk_root="${android_home}" --licenses >/dev/null 2>&1 || true
+  "${sdkmanager}" --sdk_root="${android_home}" \
+    "platform-tools" "emulator" \
+    "platforms;android-${ANDROID_API_LEVEL}" \
+    "build-tools;${ANDROID_BUILD_TOOLS}" \
+    "ndk;${ANDROID_NDK_VERSION}" \
+    "system-images;android-${ANDROID_API_LEVEL};google_apis;${img_arch}" ||
+    echo "Some Android SDK components failed to install; re-run to retry." >&2
+
+  echo "Android SDK at ${android_home}. On WSL, build APKs here but run emulators on the Windows host."
+}
+
+install_localstack_tooling() {
+  pipx_install localstack localstack
+  pipx_install awscli-local awslocal
+}
+
 configure_vscode_wsl() {
   local settings_path
   local settings_dir
@@ -484,53 +826,21 @@ configure_vscode_wsl() {
   ' "${settings_path}" >"${tmp_file}"
   mv "${tmp_file}" "${settings_path}"
 
-  extensions=(
-    "amazonwebservices.amazon-q-vscode"
-    "amazonwebservices.aws-toolkit-vscode"
-    "anthropic.claude-code"
-    "astro-build.astro-vscode"
-    "bierner.markdown-mermaid"
-    "catppuccin.catppuccin-vsc"
-    "chapar-ai.ai-token-analyzer-by-chapar-ai"
-    "clemenspeters.format-json"
-    "dbaeumer.vscode-eslint"
-    "editorconfig.editorconfig"
-    "esbenp.prettier-vscode"
-    "github.github-vscode-theme"
-    "github.vscode-github-actions"
-    "golang.go"
-    "google.geminicodeassist"
-    "hashicorp.terraform"
-    "mechatroner.rainbow-csv"
-    "mermaidchart.vscode-mermaid-chart"
-    "ms-azure-load-testing.microsoft-testing"
-    "ms-azuretools.azure-dev"
-    "ms-azuretools.vscode-azure-github-copilot"
-    "ms-azuretools.vscode-azure-mcp-server"
-    "ms-azuretools.vscode-azureappservice"
-    "ms-azuretools.vscode-azurecontainerapps"
-    "ms-azuretools.vscode-azurefunctions"
-    "ms-azuretools.vscode-azureresourcegroups"
-    "ms-azuretools.vscode-azurestaticwebapps"
-    "ms-azuretools.vscode-azurestorage"
-    "ms-azuretools.vscode-azurevirtualmachines"
-    "ms-azuretools.vscode-containers"
-    "ms-azuretools.vscode-cosmosdb"
-    "ms-dotnettools.csdevkit"
-    "ms-dotnettools.csharp"
-    "ms-dotnettools.vscode-dotnet-runtime"
-    "ms-kubernetes-tools.vscode-kubernetes-tools"
-    "ms-vscode.vscode-chat-customizations-evaluations"
-    "ms-vscode.vscode-node-azure-pack"
-    "ms-windows-ai-studio.windows-ai-studio"
-    "openai.chatgpt"
-    "redhat.vscode-yaml"
-    "saoudrizwan.claude-dev"
-    "teamsdevapp.vscode-ai-foundry"
-    "ubw.mermaidlens"
-    "vue.volar"
-    "zhuangtongfa.material-theme"
-  )
+  local ext_file
+  local line
+  ext_file="${SCRIPT_DIR}/vscode-extensions.txt"
+  extensions=()
+  if [[ -f "${ext_file}" ]]; then
+    while IFS= read -r line; do
+      line="${line%%#*}"
+      line="$(printf '%s' "$line" | tr -d '[:space:]')"
+      [[ -z "$line" ]] && continue
+      extensions+=("$line")
+    done <"${ext_file}"
+  else
+    echo "Extension list not found: ${ext_file} (skipping extension install)." >&2
+    return 0
+  fi
 
   failed_extensions=()
   for ext in "${extensions[@]}"; do
@@ -575,11 +885,32 @@ if [[ -f "$CONFIG_FILE" ]]; then
   ENABLE_SHELL_CONFIG="$(yaml_get_bool "$CONFIG_FILE" "configure_shell_files" "$ENABLE_SHELL_CONFIG")"
   ENABLE_GIT_PROFILE_SCAFFOLD="$(yaml_get_bool "$CONFIG_FILE" "configure_git_profiles" "$ENABLE_GIT_PROFILE_SCAFFOLD")"
   ENABLE_VSCODE_SETUP="$(yaml_get_bool "$CONFIG_FILE" "configure_vscode_wsl" "$ENABLE_VSCODE_SETUP")"
+  ENABLE_GITHUB_CLI="$(yaml_get_bool "$CONFIG_FILE" "install_github_cli" "$ENABLE_GITHUB_CLI")"
+  ENABLE_PYTHON="$(yaml_get_bool "$CONFIG_FILE" "install_python" "$ENABLE_PYTHON")"
+  ENABLE_SHELL_QUALITY="$(yaml_get_bool "$CONFIG_FILE" "install_shell_quality" "$ENABLE_SHELL_QUALITY")"
+  ENABLE_DOCKER="$(yaml_get_bool "$CONFIG_FILE" "install_docker" "$ENABLE_DOCKER")"
+  ENABLE_TERRAFORM_QUALITY="$(yaml_get_bool "$CONFIG_FILE" "install_terraform_quality" "$ENABLE_TERRAFORM_QUALITY")"
+  ENABLE_GO_QUALITY="$(yaml_get_bool "$CONFIG_FILE" "install_go_quality" "$ENABLE_GO_QUALITY")"
+  ENABLE_KUBERNETES="$(yaml_get_bool "$CONFIG_FILE" "install_kubernetes_tools" "$ENABLE_KUBERNETES")"
+  ENABLE_JAVA="$(yaml_get_bool "$CONFIG_FILE" "install_java" "$ENABLE_JAVA")"
+  ENABLE_FLUTTER="$(yaml_get_bool "$CONFIG_FILE" "install_flutter" "$ENABLE_FLUTTER")"
+  ENABLE_ANDROID_SDK="$(yaml_get_bool "$CONFIG_FILE" "install_android_sdk" "$ENABLE_ANDROID_SDK")"
+  ENABLE_LOCALSTACK_TOOLING="$(yaml_get_bool "$CONFIG_FILE" "install_localstack_tooling" "$ENABLE_LOCALSTACK_TOOLING")"
   GO_VERSION="$(yaml_get_value "$CONFIG_FILE" "go_version" "$GO_VERSION")"
   NODE_CHANNEL="$(yaml_get_value "$CONFIG_FILE" "node_channel" "$NODE_CHANNEL")"
   DOTNET_SDK_VERSION="$(yaml_get_value "$CONFIG_FILE" "dotnet_sdk_version" "$DOTNET_SDK_VERSION")"
   NVM_VERSION="$(yaml_get_value "$CONFIG_FILE" "nvm_version" "$NVM_VERSION")"
   TERRAFORM_VERSION="$(yaml_get_value "$CONFIG_FILE" "terraform_version" "$TERRAFORM_VERSION")"
+  TERRAFORM_DOCS_VERSION="$(yaml_get_value "$CONFIG_FILE" "terraform_docs_version" "$TERRAFORM_DOCS_VERSION")"
+  K9S_VERSION="$(yaml_get_value "$CONFIG_FILE" "k9s_version" "$K9S_VERSION")"
+  SHFMT_VERSION="$(yaml_get_value "$CONFIG_FILE" "shfmt_version" "$SHFMT_VERSION")"
+  YQ_VERSION="$(yaml_get_value "$CONFIG_FILE" "yq_version" "$YQ_VERSION")"
+  FLUTTER_CHANNEL="$(yaml_get_value "$CONFIG_FILE" "flutter_channel" "$FLUTTER_CHANNEL")"
+  JDK_VERSION="$(yaml_get_value "$CONFIG_FILE" "jdk_version" "$JDK_VERSION")"
+  ANDROID_API_LEVEL="$(yaml_get_value "$CONFIG_FILE" "android_api_level" "$ANDROID_API_LEVEL")"
+  ANDROID_BUILD_TOOLS="$(yaml_get_value "$CONFIG_FILE" "android_build_tools" "$ANDROID_BUILD_TOOLS")"
+  ANDROID_NDK_VERSION="$(yaml_get_value "$CONFIG_FILE" "android_ndk_version" "$ANDROID_NDK_VERSION")"
+  ANDROID_CMDLINE_TOOLS_VERSION="$(yaml_get_value "$CONFIG_FILE" "android_cmdline_tools_version" "$ANDROID_CMDLINE_TOOLS_VERSION")"
 fi
 
 if [[ "$SKIP_VSCODE" -eq 1 ]]; then
@@ -606,6 +937,8 @@ BASE_APT_PACKAGES=(
   zip
   jq
   git
+  git-lfs
+  rsync
   make
   build-essential
   software-properties-common
@@ -694,6 +1027,65 @@ fi
 if [[ "$ENABLE_NODE" -eq 1 ]]; then
   log "Installing NVM and Node.js toolchain"
   install_nvm_node
+fi
+
+# Ensure user-space install dirs are on PATH so re-run detection works this session.
+mkdir -p "${LOCAL_BIN}" "${HOME}/go/bin"
+export PATH="${LOCAL_BIN}:/usr/local/go/bin:${HOME}/go/bin:${PATH}"
+
+if [[ "$ENABLE_GITHUB_CLI" -eq 1 ]]; then
+  log "Installing GitHub CLI (gh)"
+  install_github_cli
+fi
+
+if [[ "$ENABLE_PYTHON" -eq 1 ]]; then
+  log "Installing Python 3 and pipx"
+  install_python_tooling
+fi
+
+if [[ "$ENABLE_SHELL_QUALITY" -eq 1 ]]; then
+  log "Installing shell quality tools (shellcheck, shfmt, bats, yq)"
+  install_shell_quality
+fi
+
+if [[ "$ENABLE_DOCKER" -eq 1 ]]; then
+  log "Installing Docker Engine, Compose, and Buildx"
+  install_docker_engine
+fi
+
+if [[ "$ENABLE_TERRAFORM_QUALITY" -eq 1 ]]; then
+  log "Installing Terraform quality tools (tflint, terraform-docs, trivy, pre-commit, gitlint)"
+  install_terraform_quality
+fi
+
+if [[ "$ENABLE_GO_QUALITY" -eq 1 ]]; then
+  log "Installing Go quality tools (golangci-lint, govulncheck, gosec, staticcheck, air)"
+  install_go_quality
+fi
+
+if [[ "$ENABLE_KUBERNETES" -eq 1 ]]; then
+  log "Installing Kubernetes tools (kubectl, helm, k9s)"
+  install_kubernetes_tools
+fi
+
+if [[ "$ENABLE_JAVA" -eq 1 ]]; then
+  log "Installing Java (OpenJDK ${JDK_VERSION})"
+  install_java
+fi
+
+if [[ "$ENABLE_FLUTTER" -eq 1 ]]; then
+  log "Installing Flutter SDK (${FLUTTER_CHANNEL})"
+  install_flutter_sdk
+fi
+
+if [[ "$ENABLE_ANDROID_SDK" -eq 1 ]]; then
+  log "Installing Android SDK (platform-tools, platforms;android-${ANDROID_API_LEVEL}, build-tools, ndk)"
+  install_android_sdk
+fi
+
+if [[ "$ENABLE_LOCALSTACK_TOOLING" -eq 1 ]]; then
+  log "Installing LocalStack tooling (localstack, awslocal)"
+  install_localstack_tooling
 fi
 
 if [[ "$ENABLE_OH_MY_ZSH" -eq 1 ]]; then
@@ -791,6 +1183,12 @@ EOF
   append_if_missing "${HOME}/.zprofile" 'export PATH="/usr/local/go/bin:$PATH"'
   append_if_missing "${HOME}/.zprofile" 'export PATH="$HOME/go/bin:$PATH"'
   append_if_missing "${HOME}/.zprofile" 'export PATH="$HOME/.dotnet/tools:$PATH"'
+  append_if_missing "${HOME}/.zprofile" 'export PATH="$HOME/flutter/bin:$PATH"'
+  if [[ -d "${HOME}/Android/Sdk" ]]; then
+    append_if_missing "${HOME}/.zprofile" 'export ANDROID_HOME="$HOME/Android/Sdk"'
+    append_if_missing "${HOME}/.zprofile" 'export ANDROID_SDK_ROOT="$HOME/Android/Sdk"'
+    append_if_missing "${HOME}/.zprofile" 'export PATH="$HOME/Android/Sdk/platform-tools:$HOME/Android/Sdk/emulator:$HOME/Android/Sdk/cmdline-tools/latest/bin:$PATH"'
+  fi
   append_if_missing "${HOME}/.zshenv" '[ -s "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"'
 fi
 

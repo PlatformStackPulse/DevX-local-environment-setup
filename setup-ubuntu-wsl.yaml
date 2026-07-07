@@ -18,6 +18,22 @@ install_dotnet: true
 install_go: true
 install_node: true
 
+# Tools extracted from the real projects under ~/github (Go Lambda + Terraform + Flutter).
+# Heavy/role-specific ones (java, flutter, localstack) default to false — enable per role.
+install_github_cli: true
+install_python: true
+install_shell_quality: true
+install_docker: true
+install_terraform_quality: true
+install_go_quality: true
+install_kubernetes_tools: true
+install_java: false
+install_flutter: false
+# Android SDK (cmdline-tools + platform-tools + build-tools + ndk). WSL can build APKs;
+# run emulators on the Windows host. Needs install_java (or it installs OpenJDK itself).
+install_android_sdk: false
+install_localstack_tooling: false
+
 install_oh_my_zsh: true
 install_powerlevel10k: true
 install_zsh_plugins: true
@@ -32,3 +48,13 @@ node_channel: lts
 dotnet_sdk_version: "8.0"
 nvm_version: v0.40.3
 terraform_version: latest
+terraform_docs_version: v0.19.0
+k9s_version: latest
+shfmt_version: v3.10.0
+yq_version: latest
+flutter_channel: stable
+jdk_version: "17"
+android_api_level: "35"
+android_build_tools: "35.0.0"
+android_ndk_version: "27.0.12077973"
+android_cmdline_tools_version: "11076708"

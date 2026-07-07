@@ -28,7 +28,8 @@ feature_flutter: false
 feature_ios: false
 
 version_jdk: "17"
-version_android_platform: latest
-version_android_build_tools: latest
+version_android_platform: "35"
+version_android_build_tools: "35.0.0"
+version_android_ndk: 27.0.12077973
 
-notes: WSL can support source and CLI workflows, but emulator creation and acceleration should be host-oriented.
+notes: compileSdk 35 + ndk 27 (from the mobile apps' build.gradle). WSL builds APKs; emulator creation and acceleration should be host-oriented. See TOOLS.md.

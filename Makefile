@@ -10,13 +10,15 @@ validate: lint dry-run profiles compose
 lint:
 	bash -n setup-ubuntu-wsl.sh
 	bash -n setup-vscode-wsl.sh
+	bash -n setup-macos.sh
 	bash -n compose/localstack-init/init.sh
-	$(SHELLCHECK) -S warning setup-ubuntu-wsl.sh setup-vscode-wsl.sh compose/localstack-init/init.sh
-	$(SHFMT) -d -i 2 -ci setup-ubuntu-wsl.sh setup-vscode-wsl.sh compose/localstack-init/init.sh
+	$(SHELLCHECK) -S warning setup-ubuntu-wsl.sh setup-vscode-wsl.sh setup-macos.sh compose/localstack-init/init.sh
+	$(SHFMT) -d -i 2 -ci setup-ubuntu-wsl.sh setup-vscode-wsl.sh setup-macos.sh compose/localstack-init/init.sh
 
 dry-run:
 	./setup-ubuntu-wsl.sh --dry-run
 	./setup-vscode-wsl.sh --dry-run
+	./setup-macos.sh --dry-run
 
 profiles:
 	@for profile in profiles/*.yaml; do \
