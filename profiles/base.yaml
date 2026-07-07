@@ -1,0 +1,38 @@
+# Shared baseline profile for all developer roles.
+name: base
+description: Shared developer workstation baseline
+status: scaffold
+
+platform_windows: true
+platform_ubuntu_wsl: true
+platform_linux: true
+platform_macos: true
+
+feature_core: true
+feature_git: true
+feature_github_cli: true
+feature_ssh: true
+feature_vscode: true
+feature_shell_tools: true
+feature_docker: false
+feature_node: false
+feature_python: false
+feature_go: false
+feature_dotnet: false
+feature_java: false
+feature_cloud_clis: false
+feature_terraform: false
+feature_localstack: false
+feature_postgres: false
+feature_redis: false
+feature_flutter: false
+feature_android: false
+feature_ios: false
+
+version_node: lts
+version_python: "3.12"
+version_go: latest
+version_dotnet: "8.0"
+version_terraform: latest
+
+notes: Baseline tools only; role profiles enable heavier toolchains.

@@ -1,0 +1,37 @@
+# Flutter mobile developer profile.
+name: flutter-mobile
+description: Flutter app development for web, Android, and macOS-backed iOS
+status: scaffold
+extends: base
+
+platform_windows: true
+platform_ubuntu_wsl: true
+platform_ubuntu_wsl_mode: partial
+platform_linux: true
+platform_macos: true
+
+feature_core: true
+feature_git: true
+feature_github_cli: true
+feature_ssh: true
+feature_vscode: true
+feature_shell_tools: true
+feature_docker: false
+feature_node: false
+feature_flutter: true
+feature_dart: true
+feature_android: true
+feature_android_emulator: true
+feature_android_emulator_mode: host_only
+feature_ios: true
+feature_ios_mode: macos_only
+feature_ios_simulator: true
+feature_ios_simulator_mode: macos_only
+feature_cocoapods: true
+feature_cocoapods_mode: macos_only
+
+version_flutter: stable
+version_android_platform: latest
+version_android_build_tools: latest
+
+notes: Android emulators belong on the host OS; iOS simulator support requires macOS and Xcode.

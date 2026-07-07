@@ -1,0 +1,39 @@
+# DevOps engineer profile.
+name: devops
+description: Cloud, infrastructure, Kubernetes, and security tooling
+status: scaffold
+extends: base
+
+platform_windows: true
+platform_ubuntu_wsl: true
+platform_linux: true
+platform_macos: true
+
+feature_core: true
+feature_git: true
+feature_github_cli: true
+feature_ssh: true
+feature_vscode: true
+feature_shell_tools: true
+feature_docker: true
+feature_cloud_clis: true
+feature_terraform: true
+feature_tfenv: true
+feature_terragrunt: false
+feature_kubectl: true
+feature_helm: true
+feature_k9s: true
+feature_localstack: true
+feature_security_scanners: true
+feature_pre_commit: true
+feature_kind: false
+feature_minikube: false
+feature_flutter: false
+feature_android: false
+feature_ios: false
+
+version_terraform: latest
+version_localstack: "3.8"
+version_kubernetes_tools: latest
+
+notes: Prefer pinned versions for regulated environments; latest is acceptable only for exploratory setup.

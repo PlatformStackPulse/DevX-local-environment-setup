@@ -1,0 +1,40 @@
+# Back end developer profile.
+name: backend
+description: API, worker, service, and local integration development
+status: scaffold
+extends: base
+
+platform_windows: true
+platform_ubuntu_wsl: true
+platform_linux: true
+platform_macos: true
+
+feature_core: true
+feature_git: true
+feature_github_cli: true
+feature_ssh: true
+feature_vscode: true
+feature_shell_tools: true
+feature_docker: true
+feature_go: true
+feature_dotnet: true
+feature_python: true
+feature_java: false
+feature_postgres: true
+feature_redis: true
+feature_localstack: true
+feature_api_clients: true
+feature_node: false
+feature_terraform: false
+feature_flutter: false
+feature_android: false
+feature_ios: false
+
+version_go: latest
+version_dotnet: "8.0"
+version_python: "3.12"
+version_postgres: "16"
+version_redis: "7"
+version_localstack: "3.8"
+
+notes: Focused on local service dependencies, API tooling, and language SDKs.
