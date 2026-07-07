@@ -19,11 +19,14 @@ feature_docker: true
 feature_cloud_clis: true
 feature_terraform: true
 feature_tfenv: true
+feature_terraform_quality: true
+feature_shell_quality: true
 feature_terragrunt: false
 feature_kubectl: true
 feature_helm: true
 feature_k9s: true
 feature_localstack: true
+feature_localstack_tooling: true
 feature_security_scanners: true
 feature_pre_commit: true
 feature_kind: false
@@ -32,8 +35,11 @@ feature_flutter: false
 feature_android: false
 feature_ios: false
 
-version_terraform: latest
-version_localstack: "3.8"
+version_terraform: "1.11.3"
+version_terraform_docs: v0.19.0
+version_tflint: v0.53.0
+version_trivy: "0.58.0"
+version_localstack: "4.0"
 version_kubernetes_tools: latest
 
-notes: Prefer pinned versions for regulated environments; latest is acceptable only for exploratory setup.
+notes: terraform_quality = tflint/terraform-docs/trivy/pre-commit/gitlint; checkov/terragrunt off (unused by current projects). See TOOLS.md.

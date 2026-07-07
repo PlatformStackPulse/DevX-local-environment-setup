@@ -27,3 +27,5 @@ Future setup commands should accept profiles like:
 ```
 
 Until profile execution is wired in, treat these files as the source-of-truth role matrix for implementation.
+
+The `feature_*` capabilities map to concrete tools installed by the setup scripts; see [TOOLS.md](../TOOLS.md) for the tool list behind each capability (for example `feature_terraform_quality` = tflint, terraform-docs, trivy, pre-commit, gitlint) and the real project each tool was extracted from.

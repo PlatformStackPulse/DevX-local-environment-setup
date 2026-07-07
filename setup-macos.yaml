@@ -1,0 +1,63 @@
+# Feature flags for setup-macos.sh
+# Run example:
+#   ./setup-macos.sh
+# Override config file path:
+#   ./setup-macos.sh --config ./setup-macos.yaml
+#
+# Heavy / role-specific toolchains (dotnet, flutter, ios, android, localstack, media)
+# default to false. Turn on the ones your role needs.
+
+dry_run: false
+
+install_homebrew: true
+install_base_packages: true
+install_shell_quality: true
+install_cloud_clis: true
+install_terraform: true
+install_terraform_quality: true
+install_go: true
+install_go_quality: true
+install_dotnet: false
+install_node: true
+install_python: true
+install_kubernetes_tools: true
+install_docker: true
+
+# Flutter mobile dev of the real apps needs all three: install_flutter (SDK),
+# install_android_tooling (Android SDK + emulator/AVD), and install_ios_tooling (iOS).
+install_flutter: false
+install_ios_tooling: false
+install_android_tooling: false
+install_localstack_tooling: false
+install_media_tools: false
+
+install_fonts: true
+install_oh_my_zsh: true
+install_powerlevel10k: true
+install_zsh_plugins: true
+configure_shell_files: true
+configure_git_profiles: true
+configure_vscode: true
+
+# Tool versions (pin for reproducible installs; "latest"/"stable" fetch the newest).
+# go_version accepts "latest" or a Homebrew versioned formula suffix like "1.23".
+# node_channel accepts "lts" or a version like "20".
+# terraform_version is resolved by tfenv (real projects pin 1.11.3).
+# docker_runtime: colima (lightweight, FOSS) or desktop (Docker Desktop cask).
+go_version: latest
+node_channel: lts
+dotnet_sdk_version: "8.0"
+nvm_version: v0.40.3
+terraform_version: 1.11.3
+flutter_channel: stable
+jdk_version: "17"
+python_formula: python@3.12
+docker_runtime: colima
+
+# Android/iOS pins (from the real mobile apps' build.gradle + Makefile).
+# android_avd_name: set empty ("") to skip AVD creation.
+android_api_level: "35"
+android_build_tools: "35.0.0"
+android_ndk_version: "27.0.12077973"
+android_avd_name: flutter_pixel_7
+cocoapods_version: 1.16.2

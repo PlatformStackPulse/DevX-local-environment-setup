@@ -23,7 +23,10 @@ feature_java: false
 feature_postgres: true
 feature_redis: true
 feature_localstack: true
+feature_localstack_tooling: true
 feature_api_clients: true
+feature_go_quality: true
+feature_shell_quality: true
 feature_node: false
 feature_terraform: false
 feature_flutter: false
@@ -35,6 +38,6 @@ version_dotnet: "8.0"
 version_python: "3.12"
 version_postgres: "16"
 version_redis: "7"
-version_localstack: "3.8"
+version_localstack: "4.0"
 
-notes: Focused on local service dependencies, API tooling, and language SDKs.
+notes: Local service deps, API tooling, language SDKs; go_quality = golangci-lint/govulncheck/gosec/staticcheck/air. See TOOLS.md.

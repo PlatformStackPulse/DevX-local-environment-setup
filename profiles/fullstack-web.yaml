@@ -19,9 +19,11 @@ feature_docker: true
 feature_node: true
 feature_python: true
 feature_playwright: true
+feature_shell_quality: true
 feature_postgres: true
 feature_redis: true
 feature_localstack: true
+feature_localstack_tooling: true
 feature_api_clients: true
 feature_terraform: false
 feature_flutter: false
@@ -29,9 +31,10 @@ feature_android: false
 feature_ios: false
 
 version_node: lts
+version_pnpm: 9.15.9
 version_python: "3.12"
 version_postgres: "16"
 version_redis: "7"
-version_localstack: "3.8"
+version_localstack: "4.0"
 
-notes: Designed for React/Vue/Astro/TypeScript apps with local Docker Compose services.
+notes: Next.js/React/TypeScript apps (pnpm) with Docker Compose services; Playwright browsers via 'npx playwright install'. See TOOLS.md.

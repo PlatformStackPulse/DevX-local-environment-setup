@@ -1,0 +1,60 @@
+# Shared VS Code extension list, consumed by:
+#   - setup-vscode-wsl.sh
+#   - setup-ubuntu-wsl.sh  (configure_vscode_wsl)
+#   - setup-macos.sh       (configure_vscode_macos)
+#
+# One extension id per line. Blank lines and lines starting with '#' are ignored.
+# Keep this the single source of truth so the platform scripts never drift.
+amazonwebservices.amazon-q-vscode
+amazonwebservices.aws-toolkit-vscode
+anthropic.claude-code
+astro-build.astro-vscode
+bierner.markdown-mermaid
+catppuccin.catppuccin-vsc
+chapar-ai.ai-token-analyzer-by-chapar-ai
+clemenspeters.format-json
+dbaeumer.vscode-eslint
+editorconfig.editorconfig
+esbenp.prettier-vscode
+github.github-vscode-theme
+github.vscode-github-actions
+golang.go
+google.geminicodeassist
+hashicorp.terraform
+mechatroner.rainbow-csv
+mermaidchart.vscode-mermaid-chart
+ms-azure-load-testing.microsoft-testing
+ms-azuretools.azure-dev
+ms-azuretools.vscode-azure-github-copilot
+ms-azuretools.vscode-azure-mcp-server
+ms-azuretools.vscode-azureappservice
+ms-azuretools.vscode-azurecontainerapps
+ms-azuretools.vscode-azurefunctions
+ms-azuretools.vscode-azureresourcegroups
+ms-azuretools.vscode-azurestaticwebapps
+ms-azuretools.vscode-azurestorage
+ms-azuretools.vscode-azurevirtualmachines
+ms-azuretools.vscode-containers
+ms-azuretools.vscode-cosmosdb
+ms-dotnettools.csdevkit
+ms-dotnettools.csharp
+ms-dotnettools.vscode-dotnet-runtime
+ms-kubernetes-tools.vscode-kubernetes-tools
+ms-vscode.vscode-chat-customizations-evaluations
+ms-vscode.vscode-node-azure-pack
+ms-windows-ai-studio.windows-ai-studio
+openai.chatgpt
+redhat.vscode-yaml
+saoudrizwan.claude-dev
+teamsdevapp.vscode-ai-foundry
+ubw.mermaidlens
+vue.volar
+zhuangtongfa.material-theme
+# --- Added for the real project toolchain (Go/Terraform/Flutter/Docker/Python) ---
+dart-code.dart-code
+dart-code.flutter
+ms-python.python
+ms-python.debugpy
+tamasfe.even-better-toml
+timonwong.shellcheck
+foxundermoon.shell-format

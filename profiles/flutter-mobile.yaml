@@ -20,6 +20,7 @@ feature_docker: false
 feature_node: false
 feature_flutter: true
 feature_dart: true
+feature_java: true
 feature_android: true
 feature_android_emulator: true
 feature_android_emulator_mode: host_only
@@ -31,7 +32,10 @@ feature_cocoapods: true
 feature_cocoapods_mode: macos_only
 
 version_flutter: stable
-version_android_platform: latest
-version_android_build_tools: latest
+version_jdk: "17"
+version_cocoapods: 1.16.2
+version_android_platform: "35"
+version_android_build_tools: "35.0.0"
+version_android_ndk: 27.0.12077973
 
-notes: Android emulators belong on the host OS; iOS simulator support requires macOS and Xcode.
+notes: compileSdk 35 + ndk 27; JDK 17 for Gradle; emulators host-only; iOS sim needs macOS + full Xcode; CocoaPods 1.16.2 as a brew-ruby gem. See TOOLS.md.

@@ -10,53 +10,25 @@ DRY_RUN_SET_BY_CLI=0
 CONFIGURE_SETTINGS=1
 INSTALL_EXTENSIONS=1
 
-EXTENSIONS=(
-  "amazonwebservices.amazon-q-vscode"
-  "amazonwebservices.aws-toolkit-vscode"
-  "anthropic.claude-code"
-  "astro-build.astro-vscode"
-  "bierner.markdown-mermaid"
-  "catppuccin.catppuccin-vsc"
-  "chapar-ai.ai-token-analyzer-by-chapar-ai"
-  "clemenspeters.format-json"
-  "dbaeumer.vscode-eslint"
-  "editorconfig.editorconfig"
-  "esbenp.prettier-vscode"
-  "github.github-vscode-theme"
-  "github.vscode-github-actions"
-  "golang.go"
-  "google.geminicodeassist"
-  "hashicorp.terraform"
-  "mechatroner.rainbow-csv"
-  "mermaidchart.vscode-mermaid-chart"
-  "ms-azure-load-testing.microsoft-testing"
-  "ms-azuretools.azure-dev"
-  "ms-azuretools.vscode-azure-github-copilot"
-  "ms-azuretools.vscode-azure-mcp-server"
-  "ms-azuretools.vscode-azureappservice"
-  "ms-azuretools.vscode-azurecontainerapps"
-  "ms-azuretools.vscode-azurefunctions"
-  "ms-azuretools.vscode-azureresourcegroups"
-  "ms-azuretools.vscode-azurestaticwebapps"
-  "ms-azuretools.vscode-azurestorage"
-  "ms-azuretools.vscode-azurevirtualmachines"
-  "ms-azuretools.vscode-containers"
-  "ms-azuretools.vscode-cosmosdb"
-  "ms-dotnettools.csdevkit"
-  "ms-dotnettools.csharp"
-  "ms-dotnettools.vscode-dotnet-runtime"
-  "ms-kubernetes-tools.vscode-kubernetes-tools"
-  "ms-vscode.vscode-chat-customizations-evaluations"
-  "ms-vscode.vscode-node-azure-pack"
-  "ms-windows-ai-studio.windows-ai-studio"
-  "openai.chatgpt"
-  "redhat.vscode-yaml"
-  "saoudrizwan.claude-dev"
-  "teamsdevapp.vscode-ai-foundry"
-  "ubw.mermaidlens"
-  "vue.volar"
-  "zhuangtongfa.material-theme"
-)
+# Populated from vscode-extensions.txt (shared with setup-ubuntu-wsl.sh / setup-macos.sh)
+# after SCRIPT_DIR is resolved below.
+EXTENSIONS=()
+
+load_extensions() {
+  local ext_file="$1"
+  local line
+  EXTENSIONS=()
+  if [[ ! -f "${ext_file}" ]]; then
+    echo "Extension list not found: ${ext_file}" >&2
+    return 1
+  fi
+  while IFS= read -r line; do
+    line="${line%%#*}"
+    line="$(printf '%s' "$line" | tr -d '[:space:]')"
+    [[ -z "$line" ]] && continue
+    EXTENSIONS+=("$line")
+  done <"${ext_file}"
+}
 
 yaml_get_value() {
   local file="$1"
@@ -144,6 +116,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -z "$CONFIG_FILE" ]]; then
   CONFIG_FILE="${SCRIPT_DIR}/setup-vscode-wsl.yaml"
 fi
+
+load_extensions "${SCRIPT_DIR}/vscode-extensions.txt" || true
 
 if [[ -f "$CONFIG_FILE" ]]; then
   if [[ "$DRY_RUN_SET_BY_CLI" -ne 1 ]]; then

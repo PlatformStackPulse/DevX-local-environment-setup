@@ -321,6 +321,7 @@ if ($InstallWingetApps) {
     Write-Step "Installing common Windows tools via winget"
     Ensure-Command -Name "winget"
     Ensure-WingetApp -Id "Git.Git" -Display "Git"
+    Ensure-WingetApp -Id "GitHub.cli" -Display "GitHub CLI"
     Ensure-WingetApp -Id "Microsoft.VisualStudioCode" -Display "Visual Studio Code"
     Ensure-WingetApp -Id "Docker.DockerDesktop" -Display "Docker Desktop"
     Ensure-WingetApp -Id "Microsoft.WindowsTerminal" -Display "Windows Terminal"
@@ -334,6 +335,11 @@ if ($InstallTroubleshootingTooling) {
     Ensure-WingetApp -Id "Amazon.AWSCLI" -Display "AWS CLI"
     Ensure-WingetApp -Id "Microsoft.AzureCLI" -Display "Azure CLI"
     Ensure-WingetApp -Id "Google.CloudSDK" -Display "Google Cloud SDK"
+
+    # Infrastructure and Kubernetes CLIs (host-side admin; heavy dev work runs in WSL).
+    Ensure-WingetApp -Id "Hashicorp.Terraform" -Display "Terraform"
+    Ensure-WingetApp -Id "Kubernetes.kubectl" -Display "kubectl"
+    Ensure-WingetApp -Id "Helm.Helm" -Display "Helm"
 
     # Troubleshooting toolkit.
     Ensure-WingetApp -Id "BurntSushi.ripgrep.MSVC" -Display "ripgrep"

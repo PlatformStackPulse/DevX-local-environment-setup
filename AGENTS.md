@@ -4,11 +4,14 @@ Automation that onboards developer workstations across Windows host setup, Ubunt
 
 ## Architecture
 
-Three self-contained scripts, one per platform boundary, intended to run in order. Each pairs with an adjacent YAML feature-flag file of the same name.
+Four self-contained setup scripts, each paired with an adjacent YAML feature-flag file of the same name. The Windows → Ubuntu → VS Code trio runs in order for a WSL workstation; [setup-macos.sh](setup-macos.sh) is a standalone macOS path.
 
 1. [setup-windows-wsl.ps1](setup-windows-wsl.ps1) (PowerShell, elevated) → [setup-windows-wsl.yaml](setup-windows-wsl.yaml) — enables WSL2, installs the distro, writes managed `.wslconfig`, fonts, optional winget/VPNKit tooling.
-2. [setup-ubuntu-wsl.sh](setup-ubuntu-wsl.sh) (Bash, inside WSL) → [setup-ubuntu-wsl.yaml](setup-ubuntu-wsl.yaml) — cloud CLIs, Terraform/tfenv, language SDKs, zsh + Powerlevel10k, git profile scaffolding, and (optionally) VS Code setup.
-3. [setup-vscode-wsl.sh](setup-vscode-wsl.sh) (Bash, inside WSL) → [setup-vscode-wsl.yaml](setup-vscode-wsl.yaml) — VS Code Machine `settings.json` plus the extension list.
+2. [setup-ubuntu-wsl.sh](setup-ubuntu-wsl.sh) (Bash, inside WSL) → [setup-ubuntu-wsl.yaml](setup-ubuntu-wsl.yaml) — cloud CLIs, Terraform/tfenv, GitHub CLI, Docker, language SDKs, Terraform/Go quality tools, Kubernetes tools, Python, zsh + Powerlevel10k, git profile scaffolding, and (optionally) VS Code setup.
+3. [setup-vscode-wsl.sh](setup-vscode-wsl.sh) (Bash, inside WSL) → [setup-vscode-wsl.yaml](setup-vscode-wsl.yaml) — VS Code Machine `settings.json` plus the shared extension list.
+4. [setup-macos.sh](setup-macos.sh) (Bash, macOS) → [setup-macos.yaml](setup-macos.yaml) — Homebrew-based install of the same toolchain plus macOS-only Flutter/iOS tooling. Written to run under macOS's stock bash 3.2 (no associative arrays, no `${var,,}`; uses BSD `sed -i ''`).
+
+Every tool installed is traceable to a real project under `~/github` — [TOOLS.md](TOOLS.md) records the provenance. The VS Code extension list lives once in [vscode-extensions.txt](vscode-extensions.txt) and is read by all three shell scripts.
 
 Expansion scaffolding now lives outside the root scripts:
 
@@ -43,7 +46,8 @@ PowerShell mirrors this: a `param()` switch, a `Get-YamlBool` load line guarded 
 
 ## Gotchas
 
-- **The VS Code extension array and `jq` settings block are duplicated** in [setup-vscode-wsl.sh](setup-vscode-wsl.sh) and the `configure_vscode_wsl()` function of [setup-ubuntu-wsl.sh](setup-ubuntu-wsl.sh). Update both together or they drift.
+- **The VS Code extension list is now a single shared file, [vscode-extensions.txt](vscode-extensions.txt)** — read by `setup-vscode-wsl.sh`, `configure_vscode_wsl()` in [setup-ubuntu-wsl.sh](setup-ubuntu-wsl.sh), and `configure_vscode_macos()` in [setup-macos.sh](setup-macos.sh). Edit that file, not the scripts. The parser skips blank lines and `#` comments. **The `jq` settings block is still duplicated** across those three functions — update all three together or they drift.
+- **New tool flags follow the same 6-point rule** (default var, dry-run entry, YAML load line, guarded block, `.yaml` key, README note) in both `setup-ubuntu-wsl.sh` and `setup-macos.sh`. Downloaded/scripted CLIs install to `~/.local/bin` (already on PATH via the shell-config block); `go install` tools land in `~/go/bin`. Arch is mapped to `amd64`/`arm64` via `go_arch()` for binary release URLs — extend it for new arches.
 - **CLI flags take precedence over YAML on both platforms.** In the Bash scripts, `--dry-run` is tracked via `DRY_RUN_SET_BY_CLI` and `--skip-vscode` / `--settings-only` / `--extensions-only` are applied *after* the YAML load, so an explicit CLI flag always wins; every other `ENABLE_*` flag is YAML-only (no CLI equivalent). In PowerShell, explicit params win over YAML via `$PSBoundParameters.ContainsKey`. Preserve this — a CLI `--dry-run` must never be silently overridden by YAML.
 - **Tool versions are configurable, not hardcoded.** Defaults live inline as `GO_VERSION` / `NODE_CHANNEL` / `DOTNET_SDK_VERSION` / `NVM_VERSION` / `TERRAFORM_VERSION` and are overridable via the matching `*_version` / `*_channel` keys in [setup-ubuntu-wsl.yaml](setup-ubuntu-wsl.yaml). The .NET package-repo URL is derived from `/etc/os-release` `VERSION_ID` behind an Ubuntu-only guard. The Windows distro default (`Ubuntu-24.04`) is still hardcoded in the PowerShell `param()` block — update it deliberately.
 - **CPU architecture is detected via `uname -m`** (`x86_64` / `aarch64`) in the AWS CLI and Go installers — extend both `case` blocks when adding arch-specific installs.

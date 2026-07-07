@@ -1,10 +1,13 @@
 services:
   localstack:
-    image: localstack/localstack:3.8
+    # Real projects under ~/github pin 3.4 (Chapar-Tech, papt, website) to 4.0
+    # (chapar-ai xpeeddating/smart-survey). 4.0 is the newest in use.
+    image: localstack/localstack:4.0
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=dynamodb,s3,sqs,sns,iam,sts,apigateway,lambda,secretsmanager,cognito-idp
+      # Union of SERVICES the real projects enable.
+      - SERVICES=dynamodb,s3,sqs,sns,events,ssm,iam,sts,apigateway,lambda,secretsmanager,cognito-idp
       - DEFAULT_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
