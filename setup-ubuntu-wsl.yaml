@@ -1,0 +1,34 @@
+# Feature flags for setup-ubuntu-wsl.sh
+# Run example:
+#   ./setup-ubuntu-wsl.sh
+# Override config file path:
+#   ./setup-ubuntu-wsl.sh --config ./setup-ubuntu-wsl.yaml
+
+dry_run: false
+apt_upgrade: true
+install_base_packages: true
+install_troubleshooting_utils: true
+
+install_aws_cli: true
+install_azure_cli: true
+install_gcloud_cli: true
+install_terraform: true
+install_tfenv: true
+install_dotnet: true
+install_go: true
+install_node: true
+
+install_oh_my_zsh: true
+install_powerlevel10k: true
+install_zsh_plugins: true
+configure_shell_files: true
+configure_git_profiles: true
+configure_vscode_wsl: true
+
+# Tool versions (pin for reproducible installs; "latest" fetches the newest at run time).
+# go_version accepts a bare number like "1.24.4"; node_channel accepts "lts" or a version like "20".
+go_version: latest
+node_channel: lts
+dotnet_sdk_version: "8.0"
+nvm_version: v0.40.3
+terraform_version: latest

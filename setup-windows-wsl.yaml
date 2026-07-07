@@ -1,0 +1,17 @@
+# Feature flags for setup-windows-wsl.ps1
+# Run example:
+#   ./setup-windows-wsl.ps1
+# Override config file path:
+#   ./setup-windows-wsl.ps1 -ConfigFile ./setup-windows-wsl.yaml
+
+dry_run: false
+distro: Ubuntu-24.04
+install_winget_apps: true
+install_mobile_tooling: false
+install_troubleshooting_tooling: true
+
+install_vpnkit: false
+vpnkit_tar_path: ""
+
+skip_font_install: false
+skip_reboot_reminder: false

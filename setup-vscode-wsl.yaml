@@ -1,0 +1,9 @@
+# Feature flags for setup-vscode-wsl.sh
+# Run example:
+#   ./setup-vscode-wsl.sh
+# Override config file path:
+#   ./setup-vscode-wsl.sh --config ./setup-vscode-wsl.yaml
+
+dry_run: false
+configure_settings: true
+install_extensions: true
