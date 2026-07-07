@@ -4,6 +4,23 @@ Automation scripts for preparing developer, DevOps, mobile, and platform enginee
 
 The repository is intentionally small: each setup script lives beside a YAML file that controls which features are enabled. Use dry-run mode first to preview actions before changing the local machine.
 
+## Getting Started
+
+New here? The short version:
+
+1. **Pick your entry point.** A fresh Windows machine starts with the Windows script. If you already have Ubuntu in WSL, jump straight to the Ubuntu script. If you only need editor setup, run the VS Code script.
+2. **Always preview first.** Every script supports a dry-run that prints exactly what it would do and changes nothing. Run it before the real thing.
+3. **Toggle features in YAML.** Each script reads an adjacent `*.yaml` file — set a flag to `true` or `false` to control optional work. Command-line flags override the YAML.
+4. **Re-run safely.** Every step is idempotent, so running a script twice will not duplicate or break anything.
+
+Recommended order for a brand-new workstation: **Windows host → Ubuntu in WSL → VS Code**. Each step is independent, so you can run only the ones you need.
+
+**Prerequisites**
+
+- Windows host script: Windows 10/11 with an elevated (Run as Administrator) PowerShell session.
+- Ubuntu script: an Ubuntu distro running in WSL2 (installed by the Windows script or manually).
+- VS Code script: the `code` CLI available inside WSL (open the distro once via VS Code Remote WSL).
+
 ## Repository Contents
 
 | File | Purpose |
@@ -18,7 +35,6 @@ The repository is intentionally small: each setup script lives beside a YAML fil
 | `compose/` | Local service templates for backend/full-stack workflows. |
 | `Makefile` | Local validation targets for scripts, profiles, and Compose templates. |
 | `EXPANSION_PLAN.md` | Roadmap for turning this repo into a multi-role setup platform. |
-| `archive/REVIEW_REPORT.md` | Previous in-depth review and issue analysis. |
 | `AGENTS.md` | Contributor guidance for future repository changes. |
 
 ## Quick Start

@@ -12,11 +12,11 @@ awslocal sns create-topic \
 awslocal dynamodb create-table \
   --table-name devx-local \
   --attribute-definitions \
-    AttributeName=PK,AttributeType=S \
-    AttributeName=SK,AttributeType=S \
+  AttributeName=PK,AttributeType=S \
+  AttributeName=SK,AttributeType=S \
   --key-schema \
-    AttributeName=PK,KeyType=HASH \
-    AttributeName=SK,KeyType=RANGE \
+  AttributeName=PK,KeyType=HASH \
+  AttributeName=SK,KeyType=RANGE \
   --billing-mode PAY_PER_REQUEST || true
 
 echo "LocalStack baseline resources are ready."

@@ -5,7 +5,8 @@ status: scaffold
 extends: base
 
 platform_windows: true
-platform_ubuntu_wsl: partial
+platform_ubuntu_wsl: true
+platform_ubuntu_wsl_mode: partial
 platform_linux: true
 platform_macos: true
 
@@ -20,10 +21,14 @@ feature_node: false
 feature_flutter: true
 feature_dart: true
 feature_android: true
-feature_android_emulator: host_only
-feature_ios: macos_only
-feature_ios_simulator: macos_only
-feature_cocoapods: macos_only
+feature_android_emulator: true
+feature_android_emulator_mode: host_only
+feature_ios: true
+feature_ios_mode: macos_only
+feature_ios_simulator: true
+feature_ios_simulator_mode: macos_only
+feature_cocoapods: true
+feature_cocoapods_mode: macos_only
 
 version_flutter: stable
 version_android_platform: latest
