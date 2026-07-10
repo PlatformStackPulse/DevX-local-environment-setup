@@ -25,10 +25,10 @@ install_docker: true
 
 # Flutter mobile dev of the real apps needs all three: install_flutter (SDK),
 # install_android_tooling (Android SDK + emulator/AVD), and install_ios_tooling (iOS).
-install_flutter: false
-install_ios_tooling: false
-install_android_tooling: false
-install_localstack_tooling: false
+install_flutter: true
+install_ios_tooling: true
+install_android_tooling: true
+install_localstack_tooling: true
 install_media_tools: false
 
 install_fonts: true

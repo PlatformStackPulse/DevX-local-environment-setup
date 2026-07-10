@@ -222,23 +222,24 @@ require_cmd() {
   fi
 }
 
-# Idempotent Homebrew formula install.
+# Idempotent Homebrew formula install. A single formula failure is non-fatal
+# (warn and continue) so one unavailable/renamed formula never aborts the run.
 brew_install() {
   local formula="$1"
   if brew list --formula "$formula" >/dev/null 2>&1; then
     echo "Already installed (formula): $formula"
   else
-    brew install "$formula"
+    brew install "$formula" || echo "Formula install failed: ${formula} (continuing; re-run to retry)." >&2
   fi
 }
 
-# Idempotent Homebrew cask install.
+# Idempotent Homebrew cask install (also non-fatal on a single failure).
 brew_cask_install() {
   local cask="$1"
   if brew list --cask "$cask" >/dev/null 2>&1; then
     echo "Already installed (cask): $cask"
   else
-    brew install --cask "$cask"
+    brew install --cask "$cask" || echo "Cask install failed: ${cask} (continuing; re-run to retry)." >&2
   fi
 }
 
@@ -322,11 +323,16 @@ install_homebrew() {
     NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   fi
 
-  # Put brew on PATH for this session (Apple Silicon: /opt/homebrew, Intel: /usr/local).
+  # Put brew on PATH for this session (Apple Silicon: /opt/homebrew, Intel: /usr/local,
+  # untar-anywhere installs: ~/.homebrew or wherever an existing brew already resolves).
   if [[ -x /opt/homebrew/bin/brew ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
   elif [[ -x /usr/local/bin/brew ]]; then
     eval "$(/usr/local/bin/brew shellenv)"
+  elif [[ -x "${HOME}/.homebrew/bin/brew" ]]; then
+    eval "$("${HOME}/.homebrew/bin/brew" shellenv)"
+  elif command -v brew >/dev/null 2>&1; then
+    eval "$(brew shellenv)"
   fi
   require_cmd brew
 }
@@ -367,6 +373,10 @@ install_terraform_via_tfenv() {
 }
 
 install_terraform_quality() {
+  # tflint is not in Homebrew core; it ships from the official terraform-linters
+  # tap. Homebrew 6.x refuses third-party taps until trusted, so trust it first.
+  brew tap terraform-linters/tap >/dev/null 2>&1 || true
+  brew trust terraform-linters/tap >/dev/null 2>&1 || true
   brew_install tflint
   brew_install terraform-docs
   brew_install trivy
@@ -507,6 +517,16 @@ install_ios_tooling() {
 install_android_tooling() {
   brew_install "openjdk@${JDK_VERSION}"
   brew_cask_install android-commandlinetools
+
+  # openjdk@N is keg-only (not symlinked onto PATH). sdkmanager/avdmanager are
+  # Java programs, so put this JDK on PATH + JAVA_HOME for the rest of this run,
+  # otherwise they fail with "Unable to locate a Java Runtime".
+  local jdk_prefix
+  jdk_prefix="$(brew --prefix "openjdk@${JDK_VERSION}" 2>/dev/null || true)"
+  if [[ -n "${jdk_prefix}" && -d "${jdk_prefix}/bin" ]]; then
+    export JAVA_HOME="${jdk_prefix}/libexec/openjdk.jdk/Contents/Home"
+    export PATH="${jdk_prefix}/bin:${PATH}"
+  fi
 
   local android_home
   android_home="$(brew --prefix)/share/android-commandlinetools"
@@ -893,6 +913,8 @@ if [[ -x /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [[ -x /usr/local/bin/brew ]]; then
   eval "$(/usr/local/bin/brew shellenv)"
+elif [[ -x "$HOME/.homebrew/bin/brew" ]]; then
+  eval "$("$HOME/.homebrew/bin/brew" shellenv)"
 fi
 command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
 
@@ -914,6 +936,14 @@ for _android_home in "$(brew --prefix 2>/dev/null)/share/android-commandlinetool
   export ANDROID_SDK_ROOT="$_android_home"
   export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
   break
+done
+# Homebrew openjdk@17 is keg-only; Android tooling (sdkmanager, Gradle) needs it on PATH + JAVA_HOME.
+for _jdk in "$(brew --prefix 2>/dev/null)/opt/openjdk@17" "$(brew --prefix 2>/dev/null)/opt/openjdk"; do
+  if [ -x "$_jdk/bin/java" ]; then
+    export JAVA_HOME="$_jdk/libexec/openjdk.jdk/Contents/Home"
+    export PATH="$_jdk/bin:$PATH"
+    break
+  fi
 done
 [ -d "$HOME/flutter/bin" ] && export PATH="$HOME/flutter/bin:$PATH"
 if [ -d "$(brew --prefix 2>/dev/null)/opt/ruby/bin" ]; then
